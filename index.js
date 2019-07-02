@@ -4,8 +4,9 @@ const cheerio = require('cheerio');
 
 function isInternalLink (link) {
     const pattern = new RegExp('^\/.');
+    const cdnPattern = new RegExp('^\/cdn-cgi');
     if(link) {
-        return link.match(pattern);
+        return link.match(pattern) && !link.match(cdnPattern);
     }
     return false;
 }
@@ -31,23 +32,13 @@ async function getInternalLinks (path) {
         console.log(err);
     }
 }
-function createMap (map, key, limit) {
-    limit += 1;
-    if(limit > 4) return map;
-    const map = new Map();
-    map.set(key, createMap(), key, limit);
-    return map;
-}
 async function buildMap (siteMap=new Map(), path='/') {
-    if (siteMap.has(path)) {
-        const values = siteMap.get(path);
-        siteMap.set(path, values);
-        return;
-    }
+    if (siteMap.has(path)) return;
     const links = await getInternalLinks(path);
     siteMap.set(path, links);
-    links.map(createMap);
-    console.log(siteMap)
+    i += 1;
+    links.forEach(link => buildMap(siteMap, link));
+    console.log(siteMap);
 }
 
 buildMap();
