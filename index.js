@@ -46,7 +46,7 @@ async function getInternalLinks(paths) {
 
 async function buildSiteMap(siteMap=new Map(), paths=['/']) {
     const results = await getInternalLinks(paths);
-    results.forEach(result => siteMap.set(result.path, result.links));
+    results.forEach(({ path, links }) => siteMap.set(path, links));
     for (const result of results) {
         const filtered = result.links.filter(link => !siteMap.has(link));
         await buildSiteMap(siteMap, filtered);
