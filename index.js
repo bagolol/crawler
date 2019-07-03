@@ -12,45 +12,51 @@ function isInternalLink (link) {
     const other = new RegExp('^\/(cdn-cgi|help|legal|blog|documents|static)')
     return link.match(pattern) && !link.match(other);
 }
-
-function requestPage (path) {
+function buildOptions(path) {
     const options = {
         uri: `https://www.monzo.com${path}`,
-        transform: body => cheerio.load(body),
+        transform: body => cheerio.load(body)
     };
-    return rp(options);
+    return options;
 }
 
-async function getInternalLinks (path) {
-    let $;
+function requestPages(paths) {
+    const requests = paths
+        .map(path => rp(buildOptions(path)));
+    return Promise.all(requests);
+}
+
+function extractAndReturnLinks($) {
+    return $('a')
+        .toArray()
+        .map(link => $(link).attr('href'))
+        .filter(isInternalLink)
+}
+
+async function getInternalLinks(paths) {
     try {
-        $ = await requestPage(path);
-        return $('a')
-          .toArray()
-          .map(link => $(link).attr('href'))
-          .filter(isInternalLink);
+        const cheerios = await requestPages(paths);
+        return cheerios.map(($,i) => ({ path: paths[i], links: extractAndReturnLinks($)}));
     } catch (err) {
         console.log(err);
     }
 }
 
-async function buildMap (siteMap=new Map(), path='/') {
-    const links = await getInternalLinks(path);
-    siteMap.set(path, links);
-    for (const link of links) {
-        if (!siteMap.has(link)) {
-            await buildMap(siteMap, link);
-        }
+async function buildSiteMap(siteMap=new Map(), paths=['/']) {
+    const results = await getInternalLinks(paths);
+    results.forEach(result => siteMap.set(result.path, result.links));
+    for (const result of results) {
+        const filtered = result.links.filter(link => !siteMap.has(link));
+        await buildSiteMap(siteMap, filtered);
     }
     return siteMap;
 }
 
 function main () {
     const startTime = new Date();
-    return buildMap().then(res => {
+    return buildSiteMap().then(res => {
         console.log(res);
         calculateDuration(startTime, new Date());
     });
 }
-
 main();
