@@ -10,10 +10,7 @@ function calculateDuration(startTime, endTime) {
 function isInternalLink (link) {
     const pattern = new RegExp('^\/.');
     const other = new RegExp('^\/(cdn-cgi|help|legal|blog|documents|static)')
-    if(link) {
-        return link.match(pattern) && !link.match(other);
-    }
-    return false;
+    return link.match(pattern) && !link.match(other);
 }
 
 function requestPage (path) {
@@ -37,7 +34,7 @@ async function getInternalLinks (path) {
     }
 }
 
-async function buildMap (siteMap= new Map(), path='/') {
+async function buildMap (siteMap=new Map(), path='/') {
     const links = await getInternalLinks(path);
     siteMap.set(path, links);
     for (const link of links) {
