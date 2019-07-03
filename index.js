@@ -1,6 +1,7 @@
 const rp = require('request-promise');
 const cheerio = require('cheerio');
 
+
 function calculateDuration(startTime, endTime) {
     const timeDiff = endTime - startTime;
     const seconds = Math.round( timeDiff / 1000);
@@ -12,6 +13,7 @@ function isInternalLink (link) {
     const other = new RegExp('^\/(cdn-cgi|help|legal|blog|documents|static)')
     return link.match(pattern) && !link.match(other);
 }
+
 function buildOptions(path) {
     const options = {
         uri: `https://www.monzo.com${path}`,
