@@ -37,14 +37,10 @@ async function getInternalLinks (path) {
     }
 }
 
-const visited = new Set();
-
 async function buildMap (siteMap= new Map(), path='/') {
     const links = await getInternalLinks(path);
-    visited.add(path);
     siteMap.set(path, links);
-    const remainingLinks = links.filter(link => !siteMap.has(link));
-    for (const link of remainingLinks) {
+    for (const link of links) {
         if (!siteMap.has(link)) {
             await buildMap(siteMap, link);
         }
