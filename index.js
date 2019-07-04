@@ -5,40 +5,41 @@ const cheerio = require('cheerio');
 function calculateDuration(startTime, endTime) {
     const timeDiff = endTime - startTime;
     const seconds = Math.round( timeDiff / 1000);
-    console.log(seconds + " seconds");
+    console.log(`${seconds} seconds`);
 }
 
 function isInternalLink (link) {
     const pattern = new RegExp('^\/.');
-    const other = new RegExp('^\/(cdn-cgi|help|legal|blog|documents|static)')
+    const other = new RegExp('^\/(cdn-cgi|blog|documents|static)');
+    if (!link) return false;
     return link.match(pattern) && !link.match(other);
 }
 
 function buildOptions(path) {
-    const options = {
+    return {
         uri: `https://www.monzo.com${path}`,
-        transform: body => cheerio.load(body)
+        transform: body => cheerio.load(body),
     };
-    return options;
 }
 
 function requestPages(paths) {
-    const requests = paths
-        .map(path => rp(buildOptions(path)));
+    const requests = paths.map(path => rp(buildOptions(path)));
     return Promise.all(requests);
 }
 
 function extractAndReturnLinks($) {
     return $('a')
-        .toArray()
-        .map(link => $(link).attr('href'))
-        .filter(isInternalLink)
+      .toArray()
+      .map(link => $(link).attr('href'))
+      .filter(isInternalLink)
 }
 
 async function getInternalLinks(paths) {
     try {
         const cheerios = await requestPages(paths);
-        return cheerios.map(($,i) => ({ path: paths[i], links: extractAndReturnLinks($)}));
+        return cheerios.map(($,i) =>
+          ({ path: paths[i], links: extractAndReturnLinks($)})
+        );
     } catch (err) {
         console.log(err);
     }
@@ -55,6 +56,7 @@ async function buildSiteMap(siteMap=new Map(), paths=['/']) {
 }
 
 function main () {
+    console.log('please be patient: I\'m crawling...');
     const startTime = new Date();
     return buildSiteMap().then(res => {
         console.log(res);
